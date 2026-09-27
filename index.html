@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tablero de Control - Ejecución Presupuestal PNSR 2026</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0f7ff',
+                            100: '#e0effe',
+                            500: '#0284c7',
+                            600: '#0369a1',
+                            700: '#035480',
+                            800: '#075985',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header / Navbar -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-sky-600 p-2.5 rounded-xl shadow-lg flex items-center justify-center text-white">
+                    <i class="fa-solid fa-chart-line text-xl"></i>
+                </div>
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-sky-400 bg-sky-950/80 border border-sky-800 px-2 py-0.5 rounded">PNSR - UPP</span>
+                        <span class="text-xs text-slate-400">Sub Unidad de Seguimiento y Evaluación</span>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-tight text-white leading-tight">Ejecución Presupuestal de Inversiones 2026</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 self-end md:self-auto flex-wrap">
+                <!-- Botón de Actualizar / Sincronizar -->
+                <button onclick="loadDashboardData()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3.5 py-2 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
+                    <i id="sync-icon" class="fa-solid fa-rotate"></i>
+                    <span id="sync-status">Sincronizar</span>
+                </button>
+                <!-- Selector de fecha de corte con Calendario -->
+                <div class="bg-slate-800/90 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center text-xs text-slate-300 shadow-inner gap-2">
+                    <i class="fa-regular fa-calendar-check text-sky-400"></i>
+                    <span class="font-medium">Corte al:</span>
+                    <input type="date" id="corte-date" value="2026-09-25" class="bg-slate-900 text-white font-medium text-xs px-2 py-1 rounded border border-slate-700 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer">
+                </div>
+                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-lg border border-slate-700 transition flex items-center gap-1.5 font-medium shadow-sm">
+                    <i class="fa-solid fa-print"></i>
+                    <span class="hidden sm:inline">Imprimir / PDF</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
+
+        <!-- Banner de Alertas Rápidas (Dinámico con el texto personalizado) -->
+        <div class="bg-amber-500/10 border-l-4 border-amber-500 p-4 rounded-r-xl shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div class="flex items-start sm:items-center gap-3">
+                <div class="p-2 bg-amber-500/20 text-amber-700 rounded-lg shrink-0">
+                    <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-semibold text-amber-900">Alerta de Inversiones Paralizadas</h4>
+                    <p class="text-xs text-amber-800" id="alerta-paralizadas-text">Cargando detalles de obras paralizadas...</p>
+                </div>
+            </div>
+            <a href="#estado-situacional" onclick="switchTab('situacional')" class="inline-flex items-center text-xs font-semibold text-amber-900 hover:text-amber-950 bg-amber-200/60 hover:bg-amber-200 px-3 py-1.5 rounded-lg transition shrink-0 self-start sm:self-auto">
+                Ver detalle <i class="fa-solid fa-arrow-right ml-1 text-xs"></i>
+            </a>
+        </div>
+
+        <!-- Tarjetas Resumen Principales KPI -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Presupuesto (PIM)</span>
+                    <span class="p-2 bg-sky-50 text-sky-600 rounded-lg text-sm"><i class="fa-solid fa-wallet"></i></span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-bold text-slate-900" id="kpi-pim">S/ 0</div>
+                    <p class="text-xs text-slate-500 mt-1 flex items-center">
+                        <span class="font-semibold text-slate-700 mr-1" id="kpi-inv-count">0</span> Inversiones con PIM
+                    </p>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                    <span>Proyectos Activos</span>
+                    <span class="font-medium text-slate-700">100% Cobertura</span>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Certificado</span>
+                    <span class="p-2 bg-indigo-50 text-indigo-600 rounded-lg text-sm"><i class="fa-solid fa-file-contract"></i></span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-bold text-slate-900" id="kpi-certificado">S/ 0</div>
+                    <div class="mt-1 flex items-center text-xs">
+                        <span class="font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded mr-1.5" id="kpi-cert-pct">0%</span>
+                        <span class="text-slate-500">del PIM asignado</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 mt-3 overflow-hidden">
+                    <div class="bg-indigo-600 h-1.5 rounded-full" id="kpi-cert-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition ring-2 ring-emerald-500/20">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Devengado (Avance)</span>
+                    <span class="p-2 bg-emerald-50 text-emerald-600 rounded-lg text-sm"><i class="fa-solid fa-chart-pie"></i></span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-bold text-slate-900" id="kpi-devengado">S/ 0</div>
+                    <div class="mt-1 flex items-center text-xs">
+                        <span class="font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded mr-1.5 text-sm" id="kpi-dev-pct">0%</span>
+                        <span class="text-slate-600 font-medium">Ejecución Presupuestal</span>
+                    </div>
+                </div>
+                <div class="w-full bg-slate-100 rounded-full h-2 mt-3 overflow-hidden">
+                    <div class="bg-emerald-500 h-2 rounded-full" id="kpi-dev-bar" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
+                <div class="flex items-center justify-between">
+                    <span class="text-xs font-medium text-slate-500 uppercase tracking-wider">Girado Total</span>
+                    <span class="p-2 bg-teal-50 text-teal-600 rounded-lg text-sm"><i class="fa-solid fa-money-bill-transfer"></i></span>
+                </div>
+                <div class="mt-3">
+                    <div class="text-2xl font-bold text-slate-900" id="kpi-girado">S/ 0</div>
+                    <div class="mt-1 flex items-center text-xs">
+                        <span class="font-bold text-teal-600 bg-teal-50 px-1.5 py-0.5 rounded mr-1.5" id="kpi-gir-pct">0%</span>
+                        <span class="text-slate-500">del Devengado Efec.</span>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-100 flex justify-between text-xs text-slate-500">
+                    <span>Compromiso Anual</span>
+                    <span class="font-medium text-slate-700" id="kpi-compromiso">S/ 168.71 MM</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menú de Navegación por Secciones -->
+        <div class="flex border-b border-slate-200 bg-white rounded-xl p-1.5 shadow-sm space-x-1 overflow-x-auto custom-scrollbar">
+            <button onclick="switchTab('general')" id="tab-btn-general" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 bg-sky-600 text-white shadow-sm whitespace-nowrap">
+                <i class="fa-solid fa-chart-column"></i> Avance Mensual vs Meta MEF
+            </button>
+            <button onclick="switchTab('unidades')" id="tab-btn-unidades" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-sitemap"></i> Ejecución por Unidades
+            </button>
+            <button onclick="switchTab('situacional')" id="tab-btn-situacional" class="tab-btn px-4 py-2 rounded-lg text-xs font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition flex items-center gap-2 whitespace-nowrap">
+                <i class="fa-solid fa-list-check"></i> Estado Situacional
+            </button>
+        </div>
+
+        <!-- SECCIÓN 1: AVANCE MENSUAL PROGRAMADO VS EJECUTADO -->
+        <div id="view-general" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Gráfico principal + Leyendas y Datos Abajo -->
+                <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-area text-sky-600"></i>
+                                    Avance Mensual: Meta MEF vs Ejecución Real y Proyección
+                                </h3>
+                                <p class="text-xs text-slate-500">Montos mensuales expresados en millones de Soles (S/ MM)</p>
+                            </div>
+                        </div>
+                        <div class="h-80 w-full relative">
+                            <canvas id="monthlyChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- LEYENDAS Y DATOS DEBAJO DEL GRÁFICO -->
+                    <div class="mt-6 pt-4 border-t border-slate-100">
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <div class="flex items-center p-3 bg-blue-50/60 rounded-xl border border-blue-200/60">
+                                <div class="w-3 h-3 rounded-full bg-blue-500 mr-2.5 shrink-0"></div>
+                                <div>
+                                    <span class="text-[11px] font-medium text-blue-700 uppercase tracking-wide block">Meta MEF</span>
+                                    <span class="text-sm font-bold text-blue-900" id="legend-total-meta">S/ 0.00 MM</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-emerald-50/60 rounded-xl border border-emerald-200/60">
+                                <div class="w-3 h-3 rounded-full bg-emerald-500 mr-2.5 shrink-0"></div>
+                                <div>
+                                    <span class="text-[11px] font-medium text-emerald-700 uppercase tracking-wide block">Ejecución Real</span>
+                                    <span class="text-sm font-bold text-emerald-900" id="legend-total-real">S/ 0.00 MM</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center p-3 bg-amber-50/60 rounded-xl border border-amber-200/60">
+                                <div class="w-3 h-3 rounded-full bg-amber-400 mr-2.5 shrink-0"></div>
+                                <div>
+                                    <span class="text-[11px] font-medium text-amber-700 uppercase tracking-wide block">Proyección</span>
+                                    <span class="text-sm font-bold text-amber-900" id="legend-total-proy">S/ 0.00 MM</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Panel Enriquecido de Cumplimiento de Metas -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-bullseye text-indigo-600"></i>
+                            Cumplimiento de Metas
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Evaluación del ritmo de devengado acumulado</p>
+
+                        <div class="space-y-3 text-xs">
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100 flex justify-between items-center">
+                                <div>
+                                    <span class="text-slate-500 block">Total Meta MEF</span>
+                                    <span class="text-sm font-bold text-slate-800" id="total-meta-mef">S/ 0 MM</span>
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 bg-slate-200 text-slate-700 rounded">100% Plan</span>
+                            </div>
+
+                            <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100 flex justify-between items-center">
+                                <div>
+                                    <span class="text-emerald-700 block font-medium">Ejecutado Acumulado</span>
+                                    <span class="text-sm font-bold text-emerald-900" id="total-ejecutado-real">S/ 0 MM</span>
+                                </div>
+                                <span id="meta-cumplimiento-pct" class="text-xs font-bold px-2.5 py-1 bg-emerald-200 text-emerald-900 rounded-full">0% Meta</span>
+                            </div>
+
+                            <div class="p-3 bg-amber-50 rounded-xl border border-amber-100 flex justify-between items-center">
+                                <div>
+                                    <span class="text-amber-700 block font-medium">Proyectado Restante (Q4)</span>
+                                    <span class="text-sm font-bold text-amber-900" id="total-proyectado">S/ 0 MM</span>
+                                </div>
+                                <span class="text-xs font-semibold px-2 py-1 bg-amber-200 text-amber-800 rounded">Oct - Dic</span>
+                            </div>
+
+                            <div class="p-3 bg-sky-50 rounded-xl border border-sky-100 space-y-1">
+                                <div class="flex justify-between font-medium text-sky-900">
+                                    <span>Brecha vs Meta Anual:</span>
+                                    <span id="meta-brecha" class="font-bold">S/ 0.00 MM</span>
+                                </div>
+                                <div class="flex justify-between text-[11px] text-sky-700">
+                                    <span>Índice de Efectividad:</span>
+                                    <span id="meta-efectividad" class="font-bold">0.0%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-info text-sky-600"></i>
+                        <span>Datos actualizados según programación mensual de la UPP.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Datos Mensuales -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-table text-slate-500"></i>
+                        Detalle de Ejecución Presupuestal Mensual 2026 (S/ Millones)
+                    </h3>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                                <th class="p-3 pl-4">Descripción</th>
+                                <th class="p-3 text-right">Ene</th><th class="p-3 text-right">Feb</th><th class="p-3 text-right">Mar</th>
+                                <th class="p-3 text-right">Abr</th><th class="p-3 text-right">May</th><th class="p-3 text-right">Jun</th>
+                                <th class="p-3 text-right">Jul</th><th class="p-3 text-right">Ago</th><th class="p-3 text-right">Set</th>
+                                <th class="p-3 text-right">Oct</th><th class="p-3 text-right">Nov</th><th class="p-3 text-right">Dic</th>
+                                <th class="p-3 text-right pr-4 bg-slate-100 font-bold">Total</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-mensual" class="divide-y divide-slate-100 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 2: EJECUCIÓN POR UNIDAD EJECUTORA -->
+        <div id="view-unidades" class="tab-content hidden space-y-6">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-bar text-sky-600"></i>
+                                    Presupuesto PIM vs Devengado por Unidad
+                                </h3>
+                                <p class="text-xs text-slate-500">Comparativa directa en Soles (S/)</p>
+                            </div>
+                        </div>
+                        <div class="h-80 w-full relative">
+                            <canvas id="unitsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-percent text-emerald-600"></i>
+                                    % de Avance Financiero (Devengado / PIM)
+                                </h3>
+                                <p class="text-xs text-slate-500">Desempeño relativo por unidad presupuestal</p>
+                            </div>
+                        </div>
+                        <div class="h-80 w-full relative">
+                            <canvas id="unitsPercentChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Unidades Ejecutoras -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-table-list text-slate-500"></i>
+                        Avance Financiero Desagregado por Unidad
+                    </h3>
+                    <span class="text-xs text-slate-500">Corte oficial acumulado</span>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                                <th class="p-3 pl-4">Unidad</th>
+                                <th class="p-3 text-center">N° Inv. Con PIM</th>
+                                <th class="p-3 text-right">PIM (S/)</th>
+                                <th class="p-3 text-right">Certificado (S/)</th>
+                                <th class="p-3 text-right">Comp. Anual (S/)</th>
+                                <th class="p-3 text-right">Devengado (S/)</th>
+                                <th class="p-3 text-right">Girado (S/)</th>
+                                <th class="p-3 pr-4 text-center">% Avance (DEV/PIM)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-unidades" class="divide-y divide-slate-100 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN 3: ESTADO SITUACIONAL DE LAS INVERSIONES -->
+        <div id="view-situacional" class="tab-content hidden space-y-6">
+            <div id="estado-situacional" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                <div class="lg:col-span-5 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-chart-pie text-sky-600"></i>
+                            Distribución por N° de Proyectos
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Total de inversiones con PIM 2026</p>
+                        <div class="h-72 w-full relative">
+                            <canvas id="statusProjectsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-7 bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+                            <i class="fa-solid fa-sack-dollar text-emerald-600"></i>
+                            Monto PIM y Devengado por Estado Situacional
+                        </h3>
+                        <p class="text-xs text-slate-500 mb-4">Monto expresado en Soles (S/)</p>
+                        <div class="h-72 w-full relative">
+                            <canvas id="statusPimChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabla de Estado Situacional -->
+            <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
+                <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-slate-500"></i>
+                            Matriz Situacional de Inversiones con PIM 2026
+                        </h3>
+                        <p class="text-xs text-slate-500">Sub Unidad de Seguimiento y Evaluación - UPP</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="statusFilterInput" onkeyup="filterStatusTable()" placeholder="Buscar estado..." class="text-xs px-3 py-1.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-sky-500">
+                    </div>
+                </div>
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left" id="statusTable">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
+                                <th class="p-3 pl-4">Estado de Inversión</th>
+                                <th class="p-3 text-center">N° Proy.</th>
+                                <th class="p-3 text-right">PIM 2026 (S/)</th>
+                                <th class="p-3 text-right">Devengado (S/)</th>
+                                <th class="p-3 text-center">% Avance DEV/PIM</th>
+                                <th class="p-3 pr-4 text-center">Nivel de Alerta</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-situacional" class="divide-y divide-slate-100 font-mono"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 text-xs py-5 border-t border-slate-800 mt-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-building-columns text-sky-500"></i>
+                <span>Programa Nacional de Saneamiento Rural - PNSR</span>
+            </div>
+            <div>
+                Sub Unidad de Seguimiento y Evaluación - UPP &bull; Reporte Oficial Setiembre 2026
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const SPREADSHEET_ID = '1pt7ALP0KCF0mN4oZsTY__w1aDM-AQNMHgi431nN74HE';
+        let charts = {};
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('bg-sky-600', 'text-white', 'shadow-sm');
+                btn.classList.add('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            });
+
+            document.getElementById('view-' + tabName).classList.remove('hidden');
+            const activeBtn = document.getElementById('tab-btn-' + tabName);
+            activeBtn.classList.remove('text-slate-600', 'hover:text-slate-900', 'hover:bg-slate-100');
+            activeBtn.classList.add('bg-sky-600', 'text-white', 'shadow-sm');
+        }
+
+        function parseNum(val) {
+            if (val === null || val === undefined) return 0;
+            if (typeof val === 'number') return val;
+            let s = String(val).trim().replace(/[S\/\$\%\s]/g, '');
+            if (!s || s === '-') return 0;
+            if (s.includes('.') && s.includes(',')) {
+                if (s.lastIndexOf('.') < s.lastIndexOf(',')) {
+                    s = s.replace(/\./g, '').replace(',', '.');
+                } else {
+                    s = s.replace(/,/g, '');
+                }
+            } else if (s.includes(',')) {
+                s = /,\d{1,2}$/.test(s) ? s.replace(',', '.') : s.replace(/,/g, '');
+            } else if (s.includes('.')) {
+                if ((s.match(/\./g) || []).length > 1) s = s.replace(/\./g, '');
+            }
+            return parseFloat(s) || 0;
+        }
+
+        function fetchSheetDataJSONP(sheetName) {
+            return new Promise((resolve, reject) => {
+                const callbackName = 'gvizCallback_' + sheetName.replace(/[^a-zA-Z0-9]/g, '') + '_' + Math.floor(Math.random() * 100000);
+                window[callbackName] = function(json) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    if (!json || !json.table) {
+                        reject('Respuesta inválida de Google Sheets');
+                        return;
+                    }
+                    const cols = json.table.cols.map(c => c ? (c.label || c.id) : '');
+                    const rows = json.table.rows.map(row => {
+                        let obj = {};
+                        if (row && row.c) {
+                            row.c.forEach((cell, idx) => {
+                                const key = cols[idx] || `col_${idx}`;
+                                obj[key] = cell ? (cell.v !== undefined ? cell.v : cell.f) : null;
+                            });
+                        }
+                        return obj;
+                    });
+                    resolve(rows);
+                };
+                const script = document.createElement('script');
+                script.src = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=responseHandler:${callbackName}&sheet=${encodeURIComponent(sheetName)}`;
+                script.onerror = function() {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    reject('Error de red');
+                };
+                document.body.appendChild(script);
+            });
+        }
+
+        async function loadDashboardData() {
+            const syncIcon = document.getElementById('sync-icon');
+            const syncStatus = document.getElementById('sync-status');
+            if (syncIcon) syncIcon.classList.add('fa-spin');
+            if (syncStatus) syncStatus.innerText = 'Actualizando...';
+
+            try {
+                const [mensualData, unidadesData, situacionalTablaData, situacionalGraficoData] = await Promise.all([
+                    fetchSheetDataJSONP('Ejecucion_Mensual'),
+                    fetchSheetDataJSONP('Unidades_Ejecutoras'),
+                    fetchSheetDataJSONP('Estado_Inversion'),
+                    fetchSheetDataJSONP('Estado_Situacional')
+                ]);
+
+                renderMensual(mensualData);
+                renderUnidades(unidadesData);
+                renderSituacional(situacionalTablaData, situacionalGraficoData);
+
+                if (syncStatus) syncStatus.innerText = 'Sincronizado';
+                if (syncIcon) syncIcon.classList.remove('fa-spin');
+            } catch (err) {
+                console.error("Error al cargar Google Sheets:", err);
+                if (syncStatus) syncStatus.innerText = 'Error de Sincronización';
+                if (syncIcon) syncIcon.classList.remove('fa-spin');
+            }
+        }
+
+        const fmtNum = num => Math.round(parseNum(num)).toLocaleString('es-PE');
+
+        function getBadgeStyle(val, isPercentage = false) {
+            const text = String(val).toUpperCase();
+            if (isPercentage) {
+                let num = parseNum(val);
+                if (num > 0 && num <= 1) {
+                    num = num * 100;
+                }
+                const formattedPct = num.toFixed(1) + '%';
+                let dotColor = 'bg-red-500';
+                let badgeClass = 'bg-red-100 text-red-800 border-red-300';
+                
+                if (num >= 70) {
+                    dotColor = 'bg-emerald-500';
+                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                } else if (num >= 50) {
+                    dotColor = 'bg-amber-500';
+                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                }
+                
+                return {
+                    text: formattedPct,
+                    html: `<span class="inline-flex items-center gap-1.5 border px-2.5 py-1 rounded-full text-xs font-bold ${badgeClass}"><span class="w-2 h-2 rounded-full ${dotColor}"></span>${formattedPct}</span>`
+                };
+            }
+
+            if (text.includes('CRÍTICO') || text.includes('PARALIZADA')) {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-red-100 text-red-800 border-red-300 font-bold">' + val + '</span>';
+            } else if (text.includes('ALTO AVANCE') || text.includes('CULMINADO') || text.includes('PRIORITARIO') || text.includes('POST-EJECUCIÓN') || text.includes('GESTIÓN')) {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">' + val + '</span>';
+            } else if (text.includes('SEGUIMIENTO') || text.includes('LICITACIÓN') || text.includes('NORMAL')) {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-sky-100 text-sky-800 border-sky-300 font-bold">' + val + '</span>';
+            } else {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-amber-100 text-amber-800 border-amber-300 font-bold">' + val + '</span>';
+            }
+        }
+
+        function renderMensual(data) {
+            const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+            let rowMeta = data.find(d => String(d.Descripcion || Object.values(d)[0]).includes('Meta')) || {};
+            let rowProy = data.find(d => String(d.Descripcion || Object.values(d)[0]).includes('Proyeccion')) || {};
+            let rowReal = data.find(d => String(d.Descripcion || Object.values(d)[0]).includes('Real')) || {};
+
+            const metaVals = months.map(m => parseNum(rowMeta[m]));
+            const proyVals = months.map(m => parseNum(rowProy[m]));
+            const realVals = months.map(m => parseNum(rowReal[m]));
+
+            const totMeta = metaVals.reduce((a, b) => a + b, 0);
+            const totProy = proyVals.reduce((a, b) => a + b, 0);
+            const totReal = realVals.reduce((a, b) => a + b, 0);
+
+            if (document.getElementById('total-meta-mef')) document.getElementById('total-meta-mef').innerText = `S/ ${totMeta.toFixed(2)} MM`;
+            if (document.getElementById('total-ejecutado-real')) document.getElementById('total-ejecutado-real').innerText = `S/ ${totReal.toFixed(2)} MM`;
+            if (document.getElementById('total-proyectado')) document.getElementById('total-proyectado').innerText = `S/ ${totProy.toFixed(2)} MM`;
+
+            if (document.getElementById('legend-total-meta')) document.getElementById('legend-total-meta').innerText = `S/ ${totMeta.toFixed(2)} MM`;
+            if (document.getElementById('legend-total-real')) document.getElementById('legend-total-real').innerText = `S/ ${totReal.toFixed(2)} MM`;
+            if (document.getElementById('legend-total-proy')) document.getElementById('legend-total-proy').innerText = `S/ ${totProy.toFixed(2)} MM`;
+
+            const brecha = totMeta - totReal;
+            const efectividad = totMeta > 0 ? (totReal / totMeta) * 100 : 0;
+            const pctCumplimiento = totMeta > 0 ? ((totReal / totMeta) * 100).toFixed(1) + '%' : '0%';
+
+            if (document.getElementById('meta-brecha')) document.getElementById('meta-brecha').innerText = `S/ ${brecha > 0 ? brecha.toFixed(2) : '0.00'} MM`;
+            if (document.getElementById('meta-efectividad')) document.getElementById('meta-efectividad').innerText = efectividad.toFixed(1) + '%';
+            if (document.getElementById('meta-cumplimiento-pct')) document.getElementById('meta-cumplimiento-pct').innerText = pctCumplimiento;
+
+            const tbody = document.getElementById('tbody-mensual');
+            if (tbody) {
+                tbody.innerHTML = `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 pl-4 font-sans font-medium text-slate-800">Meta MEF*</td>
+                        ${metaVals.map(v => `<td class="p-3 text-right">${v ? v.toFixed(2) : '-'}</td>`).join('')}
+                        <td class="p-3 text-right pr-4 font-bold bg-slate-50 font-sans text-slate-900">${totMeta.toFixed(2)}</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 bg-amber-50/20 text-amber-900">
+                        <td class="p-3 pl-4 font-sans font-medium">Proyección Ejecución**</td>
+                        ${proyVals.map(v => `<td class="p-3 text-right">${v ? v.toFixed(2) : '-'}</td>`).join('')}
+                        <td class="p-3 text-right pr-4 font-bold bg-amber-100/50 font-sans text-amber-950">${totProy.toFixed(2)}</td>
+                    </tr>
+                    <tr class="hover:bg-slate-50 bg-emerald-50/20 text-emerald-900 font-semibold">
+                        <td class="p-3 pl-4 font-sans">Ejecución Real</td>
+                        ${realVals.map(v => `<td class="p-3 text-right text-emerald-700">${v ? v.toFixed(2) : '-'}</td>`).join('')}
+                        <td class="p-3 text-right pr-4 font-bold bg-emerald-100/60 font-sans text-emerald-950">${totReal.toFixed(2)}</td>
+                    </tr>
+                `;
+            }
+
+            if (charts.monthly) charts.monthly.destroy();
+            const ctxMonthly = document.getElementById('monthlyChart');
+            if (ctxMonthly) {
+                charts.monthly = new Chart(ctxMonthly.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: months,
+                        datasets: [
+                            { label: 'Meta MEF (S/ MM)', data: metaVals, backgroundColor: '#3b82f6', borderRadius: 4, order: 2 },
+                            { label: 'Ejecutado Real (S/ MM)', data: realVals.map(v => v || null), backgroundColor: '#10b981', borderRadius: 4, order: 1 },
+                            { label: 'Proyección (S/ MM)', data: proyVals.map(v => v || null), backgroundColor: '#f59e0b', borderRadius: 4, order: 3 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function renderUnidades(data) {
+            const tbody = document.getElementById('tbody-unidades');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let sumPim = 0, sumDev = 0, sumCert = 0, sumGir = 0, sumInv = 0;
+            const dotColors = ['bg-sky-500', 'bg-indigo-500', 'bg-amber-500', 'bg-emerald-500', 'bg-purple-500', 'bg-teal-500'];
+            const hexColors = ['#0ea5e9', '#6366f1', '#f59e0b', '#10b981', '#a855f7', '#14b8a6'];
+
+            data.forEach((row, index) => {
+                const unidad = row.Unidad || row[Object.keys(row)[0]];
+                if (!unidad) return;
+
+                const inv = parseNum(row['N° Inv. Con PIM'] || row.Inv_Con_PIM);
+                const pim = parseNum(row['PIM (S/)'] || row.PIM);
+                const cert = parseNum(row['Certificado (S/)'] || row.Certificado);
+                const comp = parseNum(row['Comp. Anual (S/)'] || row.Comp_Anual);
+                const dev = parseNum(row['Devengado (S/)'] || row.Devengado);
+                const gir = parseNum(row['Girado (S/)'] || row.Girado);
+
+                const isTotalRow = String(unidad).toUpperCase().includes('TOTAL');
+                if (!isTotalRow) {
+                    sumPim += pim; sumDev += dev; sumCert += cert; sumGir += gir; sumInv += inv;
+                } else {
+                    if (pim > 0) sumPim = pim;
+                    if (dev > 0) sumDev = dev;
+                    if (cert > 0) sumCert = cert;
+                    if (gir > 0) sumGir = gir;
+                    if (inv > 0) sumInv = inv;
+                }
+
+                let rawPct = row['% Avance (DEV/PIM)'] || row['% Avance'] || (pim > 0 ? (dev / pim) * 100 : 0);
+                const badgeInfo = getBadgeStyle(rawPct, true);
+                const dotColor = dotColors[index % dotColors.length];
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition ${isTotalRow ? 'bg-slate-100 font-bold border-t border-slate-300' : ''}">
+                        <td class="p-3 pl-4 font-sans ${isTotalRow ? 'font-bold text-slate-900' : 'font-bold text-slate-800'} flex items-center gap-2">
+                            ${!isTotalRow ? `<span class="w-2.5 h-2.5 rounded-full ${dotColor}"></span>` : ''}
+                            ${unidad}
+                        </td>
+                        <td class="p-3 text-center font-sans ${isTotalRow ? 'font-bold text-slate-900' : ''}">${inv ? fmtNum(inv) : '-'}</td>
+                        <td class="p-3 text-right ${isTotalRow ? 'font-bold text-slate-900' : ''}">${pim ? fmtNum(pim) : '-'}</td>
+                        <td class="p-3 text-right text-slate-600 ${isTotalRow ? 'font-bold text-slate-900' : ''}">${cert ? fmtNum(cert) : '-'}</td>
+                        <td class="p-3 text-right text-slate-600 ${isTotalRow ? 'font-bold text-slate-900' : ''}">${comp ? fmtNum(comp) : '-'}</td>
+                        <td class="p-3 text-right font-bold text-emerald-700 ${isTotalRow ? 'text-emerald-900' : ''}">${dev ? fmtNum(dev) : '-'}</td>
+                        <td class="p-3 text-right text-slate-600 ${isTotalRow ? 'font-bold text-slate-900' : ''}">${gir ? fmtNum(gir) : '-'}</td>
+                        <td class="p-3 pr-4 text-center font-sans">
+                            ${isTotalRow ? `<span class="bg-slate-900 text-white font-bold px-3 py-1 rounded-full text-xs">${badgeInfo.text}</span>` : badgeInfo.html}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            if (document.getElementById('kpi-pim')) document.getElementById('kpi-pim').innerText = 'S/ ' + fmtNum(sumPim);
+            if (document.getElementById('kpi-inv-count')) document.getElementById('kpi-inv-count').innerText = fmtNum(sumInv);
+            if (document.getElementById('kpi-certificado')) document.getElementById('kpi-certificado').innerText = 'S/ ' + fmtNum(sumCert);
+            const certPct = sumPim > 0 ? ((sumCert / sumPim) * 100).toFixed(1) : 0;
+            if (document.getElementById('kpi-cert-pct')) document.getElementById('kpi-cert-pct').innerText = certPct + '%';
+            if (document.getElementById('kpi-cert-bar')) document.getElementById('kpi-cert-bar').style.width = certPct + '%';
+
+            if (document.getElementById('kpi-devengado')) document.getElementById('kpi-devengado').innerText = 'S/ ' + fmtNum(sumDev);
+            const devPct = sumPim > 0 ? ((sumDev / sumPim) * 100).toFixed(1) : 0;
+            if (document.getElementById('kpi-dev-pct')) document.getElementById('kpi-dev-pct').innerText = devPct + '%';
+            if (document.getElementById('kpi-dev-bar')) document.getElementById('kpi-dev-bar').style.width = devPct + '%';
+
+            if (document.getElementById('kpi-girado')) document.getElementById('kpi-girado').innerText = 'S/ ' + fmtNum(sumGir);
+            if (document.getElementById('kpi-gir-pct')) document.getElementById('kpi-gir-pct').innerText = (sumDev > 0 ? ((sumGir / sumDev) * 100).toFixed(1) : 0) + '%';
+
+            const activeData = data.filter(d => !String(d.Unidad || Object.values(d)[0]).toUpperCase().includes('TOTAL'));
+            const labels = activeData.map(d => d.Unidad || d[Object.keys(d)[0]]);
+
+            if (charts.units) charts.units.destroy();
+            const ctxUnits = document.getElementById('unitsChart');
+            if (ctxUnits) {
+                charts.units = new Chart(ctxUnits.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'PIM (S/)', data: activeData.map(d => parseNum(d['PIM (S/)'] || d.PIM)), backgroundColor: '#3b82f6', borderRadius: 4 },
+                            { label: 'Devengado (S/)', data: activeData.map(d => parseNum(d['Devengado (S/)'] || d.Devengado)), backgroundColor: '#10b981', borderRadius: 4 }
+                        ]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+
+            if (charts.unitsPct) charts.unitsPct.destroy();
+            const ctxUnitsPct = document.getElementById('unitsPercentChart');
+            if (ctxUnitsPct) {
+                charts.unitsPct = new Chart(ctxUnitsPct.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '% Avance',
+                            data: activeData.map(d => {
+                                let p = parseNum(d['PIM (S/)'] || d.PIM);
+                                let v = parseNum(d['Devengado (S/)'] || d.Devengado);
+                                let val = p > 0 ? (v / p) * 100 : 0;
+                                return val > 0 && val <= 1 ? (val * 100).toFixed(1) : val.toFixed(1);
+                            }),
+                            backgroundColor: activeData.map((_, i) => hexColors[i % hexColors.length]),
+                            borderRadius: 4
+                        }]
+                    },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
+            }
+        }
+
+        function renderSituacional(tablaData, graficoData) {
+            const tbody = document.getElementById('tbody-situacional');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let paralizadasCount = 0;
+            let paralizadasPim = 0;
+            let paralizadasDev = 0;
+
+            tablaData.forEach(row => {
+                const estado = row['Estado de Inversion'] || row.Estado || row[Object.keys(row)[0]];
+                if (!estado) return;
+
+                const proy = parseNum(row['N° Proy.'] || row.Proyectos);
+                const pim = parseNum(row['PIM 2026 (S/)'] || row.PIM);
+                const dev = parseNum(row['Devengado (S/)'] || row.Devengado);
+                const alerta = row['Nivel de Alerta'] || row.Alerta || 'Normal';
+
+                let rawPct = row['% Avance DEV/PIM'] || row['% Avance'] || (pim > 0 ? (dev / pim) * 100 : 0);
+                let numPct = parseNum(rawPct);
+                if (numPct > 0 && numPct <= 1) numPct = numPct * 100;
+                const pctFormatted = numPct.toFixed(1) + '%';
+
+                const alertUpper = String(alerta).toUpperCase();
+                const estadoUpper = String(estado).toUpperCase();
+                const isTotalRow = estadoUpper.includes('TOTAL');
+
+                // Si detecta filas de obras paralizadas, acumula los datos para la alerta detallada
+                if (estadoUpper.includes('PARALIZADA') && !isTotalRow) {
+                    paralizadasCount += proy;
+                    paralizadasPim += pim;
+                    paralizadasDev += dev;
+                }
+
+                const alertHtml = getBadgeStyle(alerta, false);
+
+                let rowHighlight = '';
+                if (alertUpper.includes('CRÍTICO') || alertUpper.includes('PARALIZADA')) {
+                    rowHighlight = 'bg-red-50/70 text-red-950 font-medium border-l-4 border-red-500';
+                } else if (alertUpper.includes('PRIORITARIO') || alertUpper.includes('ALTO AVANCE')) {
+                    rowHighlight = 'bg-amber-50/50 text-amber-950 border-l-4 border-amber-500';
+                } else if (isTotalRow) {
+                    rowHighlight = 'bg-slate-100 font-bold border-t-2 border-slate-300 text-slate-900';
+                }
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50/80 transition ${rowHighlight}">
+                        <td class="p-3 pl-4 font-sans ${isTotalRow ? 'font-bold text-slate-950 text-sm' : 'font-semibold'}">
+                            ${alertUpper.includes('PARALIZADA') ? '<i class="fa-solid fa-circle-exclamation text-red-500 mr-1.5"></i>' : ''} ${estado}
+                        </td>
+                        <td class="p-3 text-center font-sans ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${proy ? fmtNum(proy) : '-'}</td>
+                        <td class="p-3 text-right ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${pim ? fmtNum(pim) : '-'}</td>
+                        <td class="p-3 text-right font-medium ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${dev ? fmtNum(dev) : '-'}</td>
+                        <td class="p-3 text-center font-sans ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : 'font-semibold'}">${pctFormatted}</td>
+                        <td class="p-3 pr-4 text-center font-sans">
+                            ${isTotalRow ? `<span class="bg-slate-900 text-white font-bold px-3 py-1 rounded-full text-xs">${pctFormatted}</span>` : alertHtml}
+                        </td>
+                    </tr>
+                `;
+            });
+
+            // Actualización dinámica del texto exacto de la alerta solicitada
+            const alertaTextEl = document.getElementById('alerta-paralizadas-text');
+            if (alertaTextEl) {
+                const paralizadasDevPct = paralizadasPim > 0 ? ((paralizadasDev / paralizadasPim) * 100).toFixed(1) + '%' : '0.0%';
+                alertaTextEl.innerHTML = `Se registran <strong class="font-semibold text-amber-950">${paralizadasCount} Obras Paralizadas</strong> con un PIM asignado de <strong class="font-semibold text-amber-950">S/ ${fmtNum(paralizadasPim)}</strong> y un devengado acumulado de solo <strong class="font-semibold text-amber-950">${paralizadasDevPct}</strong> (<strong class="font-semibold text-amber-950">S/ ${fmtNum(paralizadasDev)}</strong>).`;
+            }
+
+            let activeData = graficoData.filter(d => !String(d['Estado de Inversion'] || d.Estado || Object.values(d)[0]).toUpperCase().includes('TOTAL'));
+            activeData.sort((a, b) => parseNum(b['PIM 2026 (S/)'] || b.PIM) - parseNum(a['PIM 2026 (S/)'] || a.PIM));
+
+            const labels = activeData.map(d => d['Estado de Inversion'] || d.Estado || d[Object.keys(d)[0]]);
+
+            if (charts.statusProj) charts.statusProj.destroy();
+            const ctxStatusProj = document.getElementById('statusProjectsChart');
+            if (ctxStatusProj) {
+                charts.statusProj = new Chart(ctxStatusProj.getContext('2d'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: activeData.map(d => parseNum(d['N° Proy.'] || d.Proyectos)),
+                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#64748b', '#d946ef']
+                        }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } } }
+                });
+            }
+
+            if (charts.statusPim) charts.statusPim.destroy();
+            const ctxStatusPim = document.getElementById('statusPimChart');
+            if (ctxStatusPim) {
+                charts.statusPim = new Chart(ctxStatusPim.getContext('2d'), {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            { label: 'PIM 2026 (S/)', data: activeData.map(d => parseNum(d['PIM 2026 (S/)'] || d.PIM)), backgroundColor: '#3b82f6', borderRadius: 4 },
+                            { label: 'Devengado (S/)', data: activeData.map(d => parseNum(d['Devengado (S/)'] || d.Devengado)), backgroundColor: '#10b981', borderRadius: 4 }
+                        ]
+                    },
+                    options: { 
+                        indexAxis: 'y', 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: { ticks: { callback: function(value) { return 'S/ ' + (value / 1000000).toFixed(0) + 'M'; } } }
+                        }
+                    }
+                });
+            }
+        }
+
+        function filterStatusTable() {
+            const filter = document.getElementById("statusFilterInput").value.toUpperCase();
+            const trs = document.getElementById("statusTable").querySelectorAll("tbody tr");
+            trs.forEach(tr => {
+                const td = tr.getElementsByTagName("td")[0];
+                if (td) {
+                    tr.style.display = (td.textContent || td.innerText).toUpperCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            });
+        }
+
+        window.onload = loadDashboardData;
+    </script>
+</body>
+</html>
