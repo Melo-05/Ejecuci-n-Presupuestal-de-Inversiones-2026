@@ -60,12 +60,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
-                <!-- Botón de Actualizar / Sincronizar -->
                 <button onclick="loadDashboardData()" class="bg-sky-600 hover:bg-sky-500 text-white text-xs px-3 py-2 rounded-lg transition flex items-center gap-2 font-medium shadow-sm">
                     <i id="sync-icon" class="fa-solid fa-rotate"></i>
                     <span id="sync-status">Sincronizar</span>
                 </button>
-                <!-- Selector de fecha de corte con Calendario -->
                 <div class="bg-slate-800/90 border border-slate-700/80 rounded-lg px-2.5 py-1.5 flex items-center text-xs text-slate-300 shadow-inner gap-2">
                     <i class="fa-regular fa-calendar-check text-sky-400"></i>
                     <span class="font-medium hidden sm:inline">Corte al:</span>
@@ -81,7 +79,7 @@
 
     <main class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 flex-grow w-full space-y-6">
 
-        <!-- Tarjetas Resumen Principales KPI (Optimizado para 1 col en móvil, 2 en tablet, 5 en desktop) -->
+        <!-- Tarjetas Resumen Principales KPI -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-sm hover:shadow-md transition">
                 <div class="flex items-center justify-between">
@@ -170,7 +168,7 @@
             </div>
         </section>
 
-        <!-- Menú de Navegación por Secciones con Scroll Horizontal nativo en móviles -->
+        <!-- Menú de Navegación por Secciones -->
         <div class="flex border-b border-slate-200 bg-white rounded-xl p-1.5 shadow-sm space-x-1 overflow-x-auto custom-scrollbar">
             <button onclick="switchTab('general')" id="tab-btn-general" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold transition flex items-center gap-2 bg-sky-600 text-white shadow-sm whitespace-nowrap shrink-0">
                 <i class="fa-solid fa-chart-column"></i> Avance Mensual vs Meta MEF
@@ -226,7 +224,7 @@
                 </div>
             </div>
 
-            <!-- Tabla de Datos Mensuales con Scroll Horizontal -->
+            <!-- Tabla de Datos Mensuales -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -290,7 +288,6 @@
                 </div>
             </div>
 
-            <!-- Tabla de Unidades Ejecutoras con Scroll Horizontal -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
@@ -349,7 +346,6 @@
                 </div>
             </div>
 
-            <!-- Tabla de Estado Situacional -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
@@ -383,7 +379,6 @@
 
         <!-- SECCIÓN 4: MÓDULO POR PROYECTO (Conectado a Proyectos_CUI) -->
         <div id="view-proyecto" class="tab-content hidden space-y-6">
-            <!-- Filtros y Controles Superiores Adaptables -->
             <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-4">
                 <div class="flex items-center space-x-3 w-full lg:w-auto">
                     <div class="p-2.5 bg-sky-50 text-sky-600 rounded-xl shrink-0">
@@ -417,7 +412,7 @@
                 </div>
             </div>
 
-            <!-- Gráficos Analíticos por Proyecto -->
+            <!-- Gráficos Analíticos por Proyecto (Todos los Departamentos) -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
                 <div class="lg:col-span-7 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
                     <div>
@@ -425,28 +420,30 @@
                             <i class="fa-solid fa-chart-bar text-sky-600"></i>
                             PIM 2026 y Devengado Acumulado por Departamento
                         </h3>
-                        <p class="text-xs text-slate-500 mb-4">Top departamentos con mayor presupuesto (S/)</p>
-                        <div class="h-72 sm:h-80 w-full relative">
+                        <p class="text-xs text-slate-500 mb-4">Presupuesto consolidado a nivel nacional (S/)</p>
+                        <!-- Contenedor con altura flexible para adaptarse a todos los departamentos -->
+                        <div id="dept-chart-container" class="w-full relative" style="height: 500px;">
                             <canvas id="proyectosDeptChart"></canvas>
                         </div>
                     </div>
                 </div>
 
                 <div class="lg:col-span-5 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between">
-                    <div>
+                    <div class="flex flex-col h-full">
                         <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
-                            <i class="fa-solid fa-chart-pie text-emerald-600"></i>
+                            <i class="fa-solid fa-chart-bar text-emerald-600"></i>
                             Distribución de Proyectos por UT
                         </h3>
                         <p class="text-xs text-slate-500 mb-4">Cantidad de inversiones asignadas</p>
-                        <div class="h-72 sm:h-80 w-full relative">
+                        <!-- Contenedor ajustado con flex-grow para ocupar todo el espacio vertical en blanco -->
+                        <div class="flex-grow w-full relative min-h-[320px]">
                             <canvas id="proyectosUtChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Tabla de Proyectos CUI Optimizada con Scroll Vertical y Horizontal -->
+            <!-- Tabla de Proyectos CUI con las nuevas cabeceras -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
@@ -460,28 +457,32 @@
                         Mostrando <span id="proyectos-count">0</span> proyectos
                     </div>
                 </div>
-                <!-- CONTENEDOR CON ALTURA MÁXIMA Y SCROLL DUAL -->
                 <div class="max-h-[500px] overflow-y-auto overflow-x-auto custom-scrollbar relative">
                     <table class="w-full text-xs text-left min-w-[950px]" id="proyectosTable">
                         <thead class="sticky top-0 bg-slate-50 shadow-sm z-10">
                             <tr class="text-slate-600 uppercase font-semibold border-b border-slate-200">
                                 <th class="p-3 pl-4 bg-slate-50">CUI</th>
-                                <th class="p-3 bg-slate-50">Nombre Corto</th>
+                                <th class="p-3 bg-slate-50">NOMBRE CORTO</th>
                                 <th class="p-3 text-center bg-slate-50">UT</th>
-                                <th class="p-3 bg-slate-50">Departamento</th>
-                                <th class="p-3 text-right bg-slate-50">PIM 2026 (S/)</th>
-                                <th class="p-3 text-right bg-slate-50">Dev. Acum (S/)</th>
-                                <th class="p-3 text-center bg-slate-50">% Avance</th>
-                                <th class="p-3 text-right bg-slate-50">MEF Set</th>
-                                <th class="p-3 text-right bg-slate-50">Deveng Set</th>
-                                <th class="p-3 pr-4 text-right bg-slate-50">Proy Set</th>
+                                <th class="p-3 bg-slate-50">DEPARTAMENTO</th>
+                                <th class="p-3 text-right bg-slate-50">PIM2026</th>
+                                <th class="p-3 text-right bg-slate-50">Dev.Acum</th>
+                                <th class="p-3 text-right bg-slate-50">MEF SET</th>
+                                <th class="p-3 text-right bg-slate-50">PROY SET</th>
+                                <th class="p-3 pr-4 text-right bg-slate-50">DEVENG SET</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-proyectos" class="divide-y divide-slate-100 font-mono"></tbody>
                     </table>
                 </div>
-                <!-- Controles de Paginación Dinámicos -->
                 <div id="paginacion-controles" class="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 text-xs"></div>
+            </div>
+
+            <!-- Texto institucional y notas solicitadas fuera de la tabla -->
+            <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 space-y-1">
+                <p>Elaborado por la Sub Unidad de Seguimiento y Evaluación - Unidad de Planeamiento y Presupuesto</p>
+                <p class="font-medium pt-1">Nota:</p>
+                <p class="pl-2">- La Meta MEF registrada en el Formato 19 (en junio 2026), reportada formalmente mediante Memorándum N° 757-2026/VIVIENDA/VMCS/PNSR/DE.</p>
             </div>
         </div>
 
@@ -985,11 +986,8 @@
                 const pim2026 = parseNum(row.PIM2026 || row.PIM || 0);
                 const devAcum = parseNum(row['Dev.Acum'] || row.Dev_Acum || 0);
                 const mefSet = parseNum(row['MEF SET'] || row.MEF_SET || 0);
-                const devengSet = parseNum(row['DEVENG SET'] || row.DEVENG_SET || 0);
                 const proySet = parseNum(row['PROY SET'] || row.PROY_SET || 0);
-
-                const avancePct = pim2026 > 0 ? (devAcum / pim2026) * 100 : 0;
-                const badge = getBadgeStyle(avancePct, true);
+                const devengSet = parseNum(row['DEVENG SET'] || row.DEVENG_SET || 0);
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/80 transition">
@@ -999,10 +997,9 @@
                         <td class="p-3 font-sans text-slate-600">${departamento}</td>
                         <td class="p-3 text-right font-bold text-slate-900">${pim2026 ? fmtNum(pim2026) : '-'}</td>
                         <td class="p-3 text-right font-semibold text-emerald-700">${devAcum ? fmtNum(devAcum) : '-'}</td>
-                        <td class="p-3 text-center font-sans">${badge.html}</td>
                         <td class="p-3 text-right text-slate-600">${mefSet ? fmtNum(mefSet) : '-'}</td>
-                        <td class="p-3 text-right text-emerald-600 font-medium">${devengSet ? fmtNum(devengSet) : '-'}</td>
-                        <td class="p-3 pr-4 text-right text-amber-600 font-medium">${proySet ? fmtNum(proySet) : '-'}</td>
+                        <td class="p-3 text-right text-amber-600 font-medium">${proySet ? fmtNum(proySet) : '-'}</td>
+                        <td class="p-3 pr-4 text-right text-emerald-600 font-medium">${devengSet ? fmtNum(devengSet) : '-'}</td>
                     </tr>
                 `;
             });
@@ -1066,7 +1063,13 @@
             }));
 
             deptArray.sort((a, b) => b.pim - a.pim);
-            let topDepts = deptArray.slice(0, 10);
+            let allDepts = deptArray;
+
+            const deptChartContainer = document.getElementById('dept-chart-container');
+            if (deptChartContainer) {
+                const dynamicHeight = Math.max(450, allDepts.length * 28);
+                deptChartContainer.style.height = dynamicHeight + 'px';
+            }
 
             if (charts.proyectosDept) charts.proyectosDept.destroy();
             const ctxDept = document.getElementById('proyectosDeptChart');
@@ -1074,18 +1077,39 @@
                 charts.proyectosDept = new Chart(ctxDept.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: topDepts.map(item => item.dep),
+                        labels: allDepts.map(item => item.dep),
                         datasets: [
-                            { label: 'PIM 2026 (S/)', data: topDepts.map(item => item.pim), backgroundColor: '#3b82f6', borderRadius: 4 },
-                            { label: 'Dev. Acumulado (S/)', data: topDepts.map(item => item.dev), backgroundColor: '#10b981', borderRadius: 4 }
+                            { label: 'PIM 2026 (S/)', data: allDepts.map(item => item.pim), backgroundColor: '#3b82f6', borderRadius: 4 },
+                            { label: 'Dev. Acumulado (S/)', data: allDepts.map(item => item.dev), backgroundColor: '#10b981', borderRadius: 4 }
                         ]
                     },
                     options: {
                         indexAxis: 'y',
                         responsive: true,
                         maintainAspectRatio: false,
+                        plugins: {
+                            legend: { position: 'top' },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let value = context.raw || 0;
+                                        return context.dataset.label + ': S/ ' + value.toLocaleString('es-PE', {minimumFractionDigits: 2});
+                                    }
+                                }
+                            }
+                        },
                         scales: {
-                            x: { ticks: { callback: function(value) { return 'S/ ' + (value / 1000000).toFixed(0) + 'M'; } } }
+                            y: {
+                                ticks: {
+                                    font: { size: 11 },
+                                    autoSkip: false
+                                }
+                            },
+                            x: { 
+                                ticks: { 
+                                    callback: function(value) { return 'S/ ' + (value / 1000000).toFixed(0) + 'M'; } 
+                                } 
+                            }
                         }
                     }
                 });
@@ -1104,18 +1128,36 @@
             const ctxUt = document.getElementById('proyectosUtChart');
             if (ctxUt) {
                 charts.proyectosUt = new Chart(ctxUt.getContext('2d'), {
-                    type: 'doughnut',
+                    type: 'bar',
                     data: {
                         labels: utLabels,
                         datasets: [{
+                            label: 'N° de Inversiones',
                             data: utCounts,
-                            backgroundColor: ['#0ea5e9', '#6366f1', '#f59e0b', '#10b981', '#a855f7', '#14b8a6', '#ec4899', '#f97316']
+                            backgroundColor: '#0ea5e9',
+                            borderRadius: 6
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { 
+                                    precision: 0,
+                                    font: { size: 11 }
+                                }
+                            },
+                            x: {
+                                ticks: { 
+                                    font: { size: 11 }
+                                }
+                            }
+                        }
                     }
                 });
             }
