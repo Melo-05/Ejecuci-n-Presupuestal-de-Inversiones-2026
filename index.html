@@ -364,8 +364,7 @@
                                 <th class="p-3 text-center">N° Proy.</th>
                                 <th class="p-3 text-right">PIM 2026 (S/)</th>
                                 <th class="p-3 text-right">Devengado (S/)</th>
-                                <th class="p-3 text-center">% Avance DEV/PIM</th>
-                                <th class="p-3 pr-4 text-center">Nivel de Alerta</th>
+                                <th class="p-3 pr-4 text-center"><span>% Avance DEV/PIM</span></th>
                             </tr>
                         </thead>
                         <tbody id="tbody-situacional" class="divide-y divide-slate-100 font-mono"></tbody>
@@ -603,37 +602,30 @@
         const fmtNum = num => Math.round(parseNum(num)).toLocaleString('es-PE');
 
         function getBadgeStyle(val, isPercentage = false) {
-            const text = String(val).toUpperCase();
-            if (isPercentage) {
-                let num = parseNum(val);
-                if (num > 0 && num <= 1) num = num * 100;
-                const formattedPct = num.toFixed(1) + '%';
-                let dotColor = 'bg-red-500';
-                let badgeClass = 'bg-red-100 text-red-800 border-red-300';
-                
-                if (num >= 70) {
-                    dotColor = 'bg-emerald-500'; // Verde para bueno
-                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
-                } else if (num >= 50) {
-                    dotColor = 'bg-amber-500'; // Naranja para medio
-                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
-                }
-                
-                return {
-                    text: formattedPct,
-                    html: `<span class="inline-flex items-center gap-1.5 border px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}"><span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>${formattedPct}</span>`
-                };
-            }
-
-            // Validación por Niveles de Alerta: Crítico (Rojo), Medio (Naranja), Bueno (Verde)
-            if (text.includes('CRÍTICO') || text.includes('PARALIZADA') || text.includes('ROJO')) {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-red-100 text-red-800 border-red-300 font-bold"><span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-1.5"></span>' + val + '</span>';
-            } else if (text.includes('MEDIO') || text.includes('MODERADO') || text.includes('NARANJA') || text.includes('SEGUIMIENTO') || text.includes('LICITACIÓN')) {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-amber-100 text-amber-800 border-amber-300 font-bold"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1.5"></span>' + val + '</span>';
+            let num = parseNum(val);
+            if (num > 0 && num <= 1) num = num * 100;
+            const formattedPct = num.toFixed(1) + '%';
+            
+            let dotColor = 'bg-red-500';
+            let badgeClass = 'bg-red-100 text-red-800 border-red-300';
+            
+            if (num > 66) {
+                dotColor = 'bg-emerald-500'; // Verde (> 66%)
+                badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+            } else if (num > 30 && num <= 66) {
+                dotColor = 'bg-amber-500'; // Anaranjado (> 30% y <= 66%)
+                badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
             } else {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-emerald-100 text-emerald-800 border-emerald-300 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span>' + val + '</span>';
+                dotColor = 'bg-red-500'; // Rojo (<= 30%)
+                badgeClass = 'bg-red-100 text-red-800 border-red-300';
             }
+            
+            return {
+                text: formattedPct,
+                html: `<span class="inline-flex items-center gap-1.5 border px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}"><span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>${formattedPct}</span>`
+            };
         }
+
         function renderMensual(data) {
             const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
             let rowMeta = data.find(d => String(d.Descripcion || Object.values(d)[0]).includes('Meta')) || {};
@@ -826,37 +818,43 @@
                 const proy = parseNum(row['N° Proy.'] || row.Proyectos);
                 const pim = parseNum(row['PIM 2026 (S/)'] || row.PIM);
                 const dev = parseNum(row['Devengado (S/)'] || row.Devengado);
-                const alerta = row['Nivel de Alerta'] || row.Alerta || 'Normal';
 
                 let rawPct = row['% Avance DEV/PIM'] || row['% Avance'] || (pim > 0 ? (dev / pim) * 100 : 0);
                 let numPct = parseNum(rawPct);
                 if (numPct > 0 && numPct <= 1) numPct = numPct * 100;
                 const pctFormatted = numPct.toFixed(1) + '%';
 
-                const alertUpper = String(alerta).toUpperCase();
                 const estadoUpper = String(estado).toUpperCase();
                 const isTotalRow = estadoUpper.includes('TOTAL');
 
-                const alertHtml = getBadgeStyle(alerta, false);
+                let dotColor = 'bg-red-500';
+                let badgeClass = 'bg-red-100 text-red-800 border-red-300';
+                if (numPct > 66) {
+                    dotColor = 'bg-emerald-500';
+                    badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
+                } else if (numPct > 30 && numPct <= 66) {
+                    dotColor = 'bg-amber-500';
+                    badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
+                } else {
+                    dotColor = 'bg-red-500';
+                    badgeClass = 'bg-red-100 text-red-800 border-red-300';
+                }
+
+                const alertHtml = `<span class="inline-flex items-center gap-1.5 border px-2.5 py-0.5 rounded-full text-xs font-bold ${badgeClass}"><span class="w-2 h-2 rounded-full ${dotColor} shrink-0"></span>${pctFormatted}</span>`;
 
                 let rowHighlight = '';
-                if (alertUpper.includes('CRÍTICO') || alertUpper.includes('PARALIZADA')) {
-                    rowHighlight = 'bg-red-50/70 text-red-950 font-medium border-l-4 border-red-500';
-                } else if (alertUpper.includes('PRIORITARIO') || alertUpper.includes('ALTO AVANCE')) {
-                    rowHighlight = 'bg-amber-50/50 text-amber-950 border-l-4 border-amber-500';
-                } else if (isTotalRow) {
+                if (isTotalRow) {
                     rowHighlight = 'bg-slate-100 font-bold border-t-2 border-slate-300 text-slate-900';
                 }
 
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50/80 transition ${rowHighlight}">
                         <td class="p-3 pl-4 font-sans ${isTotalRow ? 'font-bold text-slate-950 text-sm' : 'font-semibold'}">
-                            ${alertUpper.includes('PARALIZADA') ? '<i class="fa-solid fa-circle-exclamation text-red-500 mr-1.5"></i>' : ''} ${estado}
+                            ${estado}
                         </td>
                         <td class="p-3 text-center font-sans ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${proy ? fmtNum(proy) : '-'}</td>
                         <td class="p-3 text-right ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${pim ? fmtNum(pim) : '-'}</td>
                         <td class="p-3 text-right font-medium ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : ''}">${dev ? fmtNum(dev) : '-'}</td>
-                        <td class="p-3 text-center font-sans ${isTotalRow ? 'font-extrabold text-slate-950 text-sm' : 'font-semibold'}">${pctFormatted}</td>
                         <td class="p-3 pr-4 text-center font-sans">
                             ${isTotalRow ? `<span class="bg-slate-900 text-white font-bold px-3 py-1 rounded-full text-xs">${pctFormatted}</span>` : alertHtml}
                         </td>
