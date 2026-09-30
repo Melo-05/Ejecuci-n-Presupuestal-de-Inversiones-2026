@@ -615,10 +615,10 @@
                 let badgeClass = 'bg-red-100 text-red-800 border-red-300';
                 
                 if (num >= 70) {
-                    dotColor = 'bg-emerald-500';
+                    dotColor = 'bg-emerald-500'; // Verde para bueno
                     badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
                 } else if (num >= 50) {
-                    dotColor = 'bg-amber-500';
+                    dotColor = 'bg-amber-500'; // Naranja para medio
                     badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
                 }
                 
@@ -628,14 +628,13 @@
                 };
             }
 
-            if (text.includes('CRÍTICO') || text.includes('PARALIZADA')) {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-red-100 text-red-800 border-red-300 font-bold">' + val + '</span>';
-            } else if (text.includes('ALTO AVANCE') || text.includes('CULMINADO') || text.includes('PRIORITARIO') || text.includes('POST-EJECUCIÓN') || text.includes('GESTIÓN')) {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-emerald-100 text-emerald-800 border-emerald-300 font-bold">' + val + '</span>';
-            } else if (text.includes('SEGUIMIENTO') || text.includes('LICITACIÓN') || text.includes('NORMAL')) {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-sky-100 text-sky-800 border-sky-300 font-bold">' + val + '</span>';
+            // Validación por Niveles de Alerta: Crítico (Rojo), Medio (Naranja), Bueno (Verde)
+            if (text.includes('CRÍTICO') || text.includes('PARALIZADA') || text.includes('ROJO')) {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-red-100 text-red-800 border-red-300 font-bold"><span class="w-2 h-2 rounded-full bg-red-500 inline-block mr-1.5"></span>' + val + '</span>';
+            } else if (text.includes('MEDIO') || text.includes('MODERADO') || text.includes('NARANJA') || text.includes('SEGUIMIENTO') || text.includes('LICITACIÓN')) {
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-amber-100 text-amber-800 border-amber-300 font-bold"><span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1.5"></span>' + val + '</span>';
             } else {
-                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-amber-100 text-amber-800 border-amber-300 font-bold">' + val + '</span>';
+                return '<span class="px-2.5 py-1 rounded-full text-[11px] border bg-emerald-100 text-emerald-800 border-emerald-300 font-bold"><span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span>' + val + '</span>';
             }
         }
 
