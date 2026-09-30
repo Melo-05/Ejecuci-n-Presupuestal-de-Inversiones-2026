@@ -215,7 +215,6 @@
                                     <span class="text-sm font-bold text-emerald-900" id="legend-total-real">S/ 0.00 MM</span>
                                 </div>
                             </div>
-                            
                         </div>
                     </div>
                 </div>
@@ -289,12 +288,12 @@
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <h3 class="text-sm font-bold text-slate-900 flex items-center gap-2">
                         <i class="fa-solid fa-table-list text-slate-500"></i>
-                        Avance Financiero Desagregado por Unidad
+                        Avance Financiero Desagregado por Unidad (Incluyendo Metas MEF y Proyectadas)
                     </h3>
                     <span class="text-xs text-slate-500">Corte oficial acumulado</span>
                 </div>
                 <div class="overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-xs text-left min-w-[750px]">
+                    <table class="w-full text-xs text-left min-w-[1250px]">
                         <thead>
                             <tr class="bg-slate-50 text-slate-600 uppercase font-semibold border-b border-slate-200">
                                 <th class="p-3 pl-4">Unidad</th>
@@ -304,7 +303,14 @@
                                 <th class="p-3 text-right">Comp. Anual (S/)</th>
                                 <th class="p-3 text-right">Devengado (S/)</th>
                                 <th class="p-3 text-right">Girado (S/)</th>
-                                <th class="p-3 pr-4 text-center">% Avance (DEV/PIM)</th>
+                                <th class="p-3 text-center">% Avance (DEV/PIM)</th>
+                                <th class="p-3 text-right">PROG. MEF III*</th>
+                                <th class="p-3 text-right">META PROY. SET</th>
+                                <th class="p-3 text-right">EJECUCIÓN</th>
+                                <th class="p-3 text-center">AV. META MEF*</th>
+                                <th class="p-3 text-center">AV. META PROY.</th>
+                                <th class="p-3 text-right">PENDIENTE</th>
+                                <th class="p-3 pr-4 text-center">PUESTO</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-unidades" class="divide-y divide-slate-100 font-mono"></tbody>
@@ -417,7 +423,6 @@
                             PIM 2026 y Devengado Acumulado por Departamento
                         </h3>
                         <p class="text-xs text-slate-500 mb-4">Presupuesto consolidado a nivel nacional (S/)</p>
-                        <!-- Contenedor con altura flexible para adaptarse a todos los departamentos -->
                         <div id="dept-chart-container" class="w-full relative" style="height: 500px;">
                             <canvas id="proyectosDeptChart"></canvas>
                         </div>
@@ -431,7 +436,6 @@
                             Distribución de Proyectos por UT
                         </h3>
                         <p class="text-xs text-slate-500 mb-4">Cantidad de inversiones asignadas</p>
-                        <!-- Contenedor ajustado con flex-grow para ocupar todo el espacio vertical en blanco -->
                         <div class="flex-grow w-full relative min-h-[320px]">
                             <canvas id="proyectosUtChart"></canvas>
                         </div>
@@ -439,7 +443,7 @@
                 </div>
             </div>
 
-            <!-- Tabla de Proyectos CUI con las nuevas cabeceras -->
+            <!-- Tabla de Proyectos CUI -->
             <div class="bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
                 <div class="p-4 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div>
@@ -610,13 +614,13 @@
             let badgeClass = 'bg-red-100 text-red-800 border-red-300';
             
             if (num > 66) {
-                dotColor = 'bg-emerald-500'; // Verde (> 66%)
+                dotColor = 'bg-emerald-500';
                 badgeClass = 'bg-emerald-100 text-emerald-800 border-emerald-300';
             } else if (num > 30 && num <= 66) {
-                dotColor = 'bg-amber-500'; // Anaranjado (> 30% y <= 66%)
+                dotColor = 'bg-amber-500';
                 badgeClass = 'bg-amber-100 text-amber-800 border-amber-300';
             } else {
-                dotColor = 'bg-red-500'; // Rojo (<= 30%)
+                dotColor = 'bg-red-500';
                 badgeClass = 'bg-red-100 text-red-800 border-red-300';
             }
             
@@ -636,7 +640,6 @@
             const proyVals = months.map(m => parseNum(rowProy[m]));
             const realVals = months.map(m => parseNum(rowReal[m]));
 
-            // Tomamos el total directamente del campo Total de cada fila del Excel (si existe), sin forzar sumas automáticas
             const totMetaExcel = rowMeta['Total'] !== undefined && rowMeta['Total'] !== null && rowMeta['Total'] !== '' ? parseNum(rowMeta['Total']) : null;
             const totProyExcel = rowProy['Total'] !== undefined && rowProy['Total'] !== null && rowProy['Total'] !== '' ? parseNum(rowProy['Total']) : 185.14;
             const totRealExcel = rowReal['Total'] !== undefined && rowReal['Total'] !== null && rowReal['Total'] !== '' ? parseNum(rowReal['Total']) : 133.46;
@@ -686,7 +689,6 @@
             }
         }
 
-        
         function renderUnidades(data) {
             const tbody = document.getElementById('tbody-unidades');
             if (!tbody) return;
@@ -706,6 +708,15 @@
                 const comp = parseNum(row['Comp. Anual (S/)'] || row.Comp_Anual);
                 const dev = parseNum(row['Devengado (S/)'] || row.Devengado);
                 const gir = parseNum(row['Girado (S/)'] || row.Girado);
+
+                // Nuevas columnas incorporadas
+                const progMef = parseNum(row['PROG. MEF III*'] || 0);
+                const metaProySet = parseNum(row['META PROYECTADA SETIEMBRE AL 15/09'] || 0);
+                const ejecucionSet = parseNum(row['EJECUCIÓN'] || 0);
+                const avMetaMef = row['AVANCE META MEF*'] || '-';
+                const avMetaProy = row['AVANCE META PROYECTADA SETIEMBRE AL 15/09'] || '-';
+                const pendienteEjec = parseNum(row['Pendiente de ejecutar de acuerdo a últ. meta proyectada'] || 0);
+                const puestoMeta = row['PUESTO (Meta MEF III*)'] || '-';
 
                 const isTotalRow = String(unidad).toUpperCase().includes('TOTAL');
                 if (!isTotalRow) {
@@ -735,9 +746,16 @@
                         <td class="p-3 text-right text-slate-600 ${isTotalRow ? 'font-bold text-slate-900' : ''}">${comp ? fmtNum(comp) : '-'}</td>
                         <td class="p-3 text-right font-bold text-emerald-700 ${isTotalRow ? 'text-emerald-900' : ''}">${dev ? fmtNum(dev) : '-'}</td>
                         <td class="p-3 text-right text-slate-600 ${isTotalRow ? 'font-bold text-slate-900' : ''}">${gir ? fmtNum(gir) : '-'}</td>
-                        <td class="p-3 pr-4 text-center font-sans">
+                        <td class="p-3 text-center font-sans">
                             ${isTotalRow ? `<span class="bg-slate-900 text-white font-bold px-3 py-1 rounded-full text-xs">${badgeInfo.text}</span>` : badgeInfo.html}
                         </td>
+                        <td class="p-3 text-right">${progMef ? fmtNum(progMef) : '-'}</td>
+                        <td class="p-3 text-right">${metaProySet ? metaProySet : '-'}</td>
+                        <td class="p-3 text-right">${ejecucionSet ? ejecucionSet : '-'}</td>
+                        <td class="p-3 text-center">${avMetaMef}</td>
+                        <td class="p-3 text-center">${avMetaProy}</td>
+                        <td class="p-3 text-right">${pendienteEjec}</td>
+                        <td class="p-3 pr-4 text-center font-bold">${puestoMeta}</td>
                     </tr>
                 `;
             });
