@@ -467,9 +467,9 @@
                                 <th class="p-3 bg-slate-50">DEPARTAMENTO</th>
                                 <th class="p-3 text-right bg-slate-50">PIM2026</th>
                                 <th class="p-3 text-right bg-slate-50">Dev.Acum</th>
-                                <th class="p-3 text-right bg-slate-50">MEF SET</th>
-                                <th class="p-3 text-right bg-slate-50">PROY SET</th>
-                                <th class="p-3 pr-4 text-right bg-slate-50">DEVENG SET</th>
+                                <th class="p-3 text-right bg-slate-50">MEF OCT</th>
+                                <th class="p-3 text-right bg-slate-50">PROY OCT</th>
+                                <th class="p-3 pr-4 text-right bg-slate-50">DEVENG OCT</th>
                             </tr>
                         </thead>
                         <tbody id="tbody-proyectos" class="divide-y divide-slate-100 font-mono"></tbody>
@@ -705,7 +705,7 @@
                 const inv = parseNum(row['N° Inv. Con PIM'] || row.Inv_Con_PIM);
                 const pim = parseNum(row['PIM (S/)'] || row.PIM);
                 const cert = parseNum(row['Certificado (S/)'] || row.Certificado);
-                const comp = parseNum(row['Comp. Anual (S/)'] || row.Comp_Anual);
+                const comp = parseNum(row['Comp. Anual (S/)'] || row['Comp. Anual'] || row.Comp_Anual);
                 const dev = parseNum(row['Devengado (S/)'] || row.Devengado);
                 const gir = parseNum(row['Girado (S/)'] || row.Girado);
 
@@ -750,11 +750,11 @@
                             ${isTotalRow ? `<span class="bg-slate-900 text-white font-bold px-3 py-1 rounded-full text-xs">${badgeInfo.text}</span>` : badgeInfo.html}
                         </td>
                         <td class="p-3 text-right">${progMef ? fmtNum(progMef) : '-'}</td>
-                        <td class="p-3 text-right">${metaProySet ? metaProySet : '-'}</td>
-                        <td class="p-3 text-right">${ejecucionSet ? ejecucionSet : '-'}</td>
+                        <td class="p-3 text-right">${metaProySet ? fmtNum(metaProySet) : '-'}</td>
+                        <td class="p-3 text-right">${ejecucionSet ? fmtNum(ejecucionSet) : '-'}</td>
                         <td class="p-3 text-center">${avMetaMef}</td>
                         <td class="p-3 text-center">${avMetaProy}</td>
-                        <td class="p-3 text-right">${pendienteEjec}</td>
+                        <td class="p-3 text-right">${pendienteEjec ? fmtNum(pendienteEjec) : '-'}</td>
                         <td class="p-3 pr-4 text-center font-bold">${puestoMeta}</td>
                     </tr>
                 `;
