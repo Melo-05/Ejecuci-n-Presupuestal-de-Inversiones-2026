@@ -100,11 +100,6 @@
         button, input, select {
             transition: all 0.2s ease;
         }
-
-        /* Animación sutil para las insignias */
-        .badge-pulse {
-            position: relative;
-        }
     </style>
 </head>
 <body class="antialiased min-h-screen flex flex-col selection:bg-sky-500 selection:text-white">
@@ -400,39 +395,95 @@
 
         <!-- SECCIÓN 3: ESTADO SITUACIONAL DE LAS INVERSIONES -->
         <div id="view-situacional" class="tab-content hidden space-y-6">
-            <div id="estado-situacional" class="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div class="lg:col-span-5 card-modern p-6 flex flex-col justify-between">
+            <!-- Barra de Filtros: Mes y Departamento -->
+            <div class="card-modern p-5 flex flex-col lg:flex-row items-center justify-between gap-4">
+                <div class="flex items-center space-x-3 w-full lg:w-auto">
+                    <div class="p-2.5 bg-emerald-50 text-emerald-600 rounded-xl shrink-0 shadow-sm">
+                        <i class="fa-solid fa-filter text-base"></i>
+                    </div>
                     <div>
-                        <h3 class="text-base font-extrabold text-slate-900 mb-1 flex items-center gap-2.5">
-                            <div class="p-2 bg-sky-50 text-sky-600 rounded-xl"><i class="fa-solid fa-chart-pie"></i></div>
-                            Distribución por N° de Proyectos
-                        </h3>
-                        <p class="text-xs text-slate-400 mb-6">Total de inversiones con PIM 2026</p>
-                        <div class="h-72 w-full relative">
-                            <canvas id="statusProjectsChart"></canvas>
-                        </div>
+                        <h3 class="text-sm font-extrabold text-slate-900">Filtros de Proyectos Culminados</h3>
+                        <p class="text-xs text-slate-400">Filtre por mes o por departamento para actualizar el tablero</p>
                     </div>
                 </div>
+                <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-start lg:justify-end">
+                    <div class="w-full sm:w-auto">
+                        <select id="filter-mes-culminacion" onchange="filterCulminados()" class="text-xs px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-700 w-full sm:w-auto cursor-pointer">
+                            <option value="">Todos los meses (2026)</option>
+                            <option value="0">Enero</option>
+                            <option value="1">Febrero</option>
+                            <option value="2">Marzo</option>
+                            <option value="3">Abril</option>
+                            <option value="4">Mayo</option>
+                            <option value="5">Junio</option>
+                            <option value="6">Julio</option>
+                            <option value="7">Agosto</option>
+                            <option value="8">Setiembre</option>
+                            <option value="9">Octubre</option>
+                            <option value="10">Noviembre</option>
+                            <option value="11">Diciembre</option>
+                        </select>
+                    </div>
+                    <div class="w-full sm:w-auto">
+                        <select id="filter-dep-culminacion" onchange="filterCulminados()" class="text-xs px-4 py-2.5 border border-slate-200 rounded-xl bg-slate-50/50 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-semibold text-slate-700 w-full sm:w-auto cursor-pointer">
+                            <option value="">Todos los Departamentos</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
-                <div class="lg:col-span-7 card-modern p-6 flex flex-col justify-between">
+            <!-- Gráfico Único de Culminados -->
+            <div id="estado-situacional" class="grid grid-cols-1 gap-6">
+                <div class="card-modern p-6 flex flex-col justify-between">
                     <div>
                         <h3 class="text-base font-extrabold text-slate-900 mb-1 flex items-center gap-2.5">
-                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-sack-dollar"></i></div>
-                            Monto PIM y Devengado por Estado Situacional
+                            <div class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-chart-bar"></i></div>
+                            Proyectos Culminados por Mes (Año 2026)
                         </h3>
-                        <p class="text-xs text-slate-400 mb-6">Monto expresado en Soles (S/)</p>
-                        <div class="h-72 w-full relative">
-                            <canvas id="statusPimChart"></canvas>
+                        <p class="text-xs text-slate-400 mb-6">Distribución mensual según la fecha de término real de los proyectos</p>
+                        <div class="h-80 sm:h-96 w-full relative">
+                            <canvas id="statusMonthlyCulminadosChart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Tabla de Proyectos Culminados (Estado_Situacional) -->
             <div class="card-modern overflow-hidden">
                 <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
                         <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2.5">
                             <div class="p-1.5 bg-slate-100 text-slate-600 rounded-lg"><i class="fa-solid fa-list-check"></i></div>
+                            Listado de Proyectos Registrados en Estado Situacional
+                        </h3>
+                        <p class="text-xs text-slate-400 mt-0.5">Mostrando registros según los filtros seleccionados</p>
+                    </div>
+                    <div class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-xl text-center shadow-sm">
+                        Total proyectos: <span id="culminados-count">0</span>
+                    </div>
+                </div>
+                <div class="max-h-[400px] overflow-y-auto overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-xs text-left min-w-[700px]">
+                        <thead class="sticky top-0 bg-slate-50 shadow-sm z-10">
+                            <tr class="border-b border-slate-200">
+                                <th class="p-3.5 pl-5 bg-slate-50">CUI</th>
+                                <th class="p-3.5 bg-slate-50">UT</th>
+                                <th class="p-3.5 bg-slate-50">DEPARTAMENTO</th>
+                                <th class="p-3.5 bg-slate-50">ESTADO</th>
+                                <th class="p-3.5 pr-5 text-right bg-slate-50">FECHA TÉRMINO REAL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-culminados" class="divide-y divide-slate-100 font-mono text-slate-600"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Matriz Situacional Tradicional con PIM 2026 -->
+            <div class="card-modern overflow-hidden">
+                <div class="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <h3 class="text-sm font-extrabold text-slate-900 flex items-center gap-2.5">
+                            <div class="p-1.5 bg-slate-100 text-slate-600 rounded-lg"><i class="fa-solid fa-table"></i></div>
                             Matriz Situacional de Inversiones con PIM 2026
                         </h3>
                         <p class="text-xs text-slate-400 mt-0.5">Sub Unidad de Seguimiento y Evaluación - UPP</p>
@@ -583,6 +634,7 @@
         const SPREADSHEET_ID = '1pt7ALP0KCF0mN4oZsTY__w1aDM-AQNMHgi431nN74HE';
         let charts = {};
         let rawProyectosData = [];
+        let rawCulminadosData = [];
         
         let paginaActual = 1;
         const proyectosPorPagina = 15;
@@ -634,8 +686,10 @@
                         let obj = {};
                         if (row && row.c) {
                             row.c.forEach((cell, idx) => {
-                                const key = cols[idx] || `col_${idx}`;
-                                obj[key] = cell ? (cell.v !== undefined ? cell.v : cell.f) : null;
+                                const rawKey = cols[idx] || `col_${idx}`;
+                                const cleanKey = String(rawKey).trim().replace(/\s+/g, '_').toUpperCase();
+                                obj[cleanKey] = cell ? (cell.v !== undefined ? cell.v : cell.f) : null;
+                                obj[rawKey] = obj[cleanKey];
                             });
                         }
                         return obj;
@@ -958,45 +1012,166 @@
                 `;
             });
 
-            let activeData = graficoData.filter(d => !String(d['Estado de Inversion'] || d.Estado || Object.values(d)[0]).toUpperCase().includes('TOTAL'));
-            activeData.sort((a, b) => parseNum(b['PIM 2026 (S/)'] || b.PIM) - parseNum(a['PIM 2026 (S/)'] || a.PIM));
+            // Procesamiento de datos y formateo de fechas a dd/mm/aaaa
+            rawCulminadosData = graficoData.map(row => {
+                const cui = row['CUI'] || row[Object.keys(row)[0]] || '-';
+                const ut = row['UT'] || row[Object.keys(row)[1]] || '-';
+                const departamento = String(row['DEPARTAMENTO'] || row['Departamento'] || row[Object.keys(row)[2]] || '-').trim().toUpperCase();
+                const estado = row['ESTADO'] || row['Estado'] || row[Object.keys(row)[3]] || '-';
+                const rawFecha = row['FECHA TÉRMINO REAL'] || row['FECHA_TÉRMINO_REAL'] || row['FECHA_TERMINO_REAL'] || row[Object.keys(row)[4]] || '';
 
-            const labels = activeData.map(d => d['Estado de Inversion'] || d.Estado || d[Object.keys(d)[0]]);
+                let monthIndex = -1;
+                let fechaFormateada = '-';
+                const str = String(rawFecha).trim();
 
-            if (charts.statusProj) charts.statusProj.destroy();
-            const ctxStatusProj = document.getElementById('statusProjectsChart');
-            if (ctxStatusProj) {
-                charts.statusProj = new Chart(ctxStatusProj.getContext('2d'), {
-                    type: 'doughnut',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            data: activeData.map(d => parseNum(d['N° Proy.'] || d.Proyectos)),
-                            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#ec4899', '#14b8a6', '#64748b', '#d946ef']
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
-                });
+                if (str.startsWith('Date(')) {
+                    const matchDate = str.match(/Date\((\d+),\s*(\d+),\s*(\d+)\)/);
+                    if (matchDate) {
+                        const y = matchDate[1];
+                        const m = parseInt(matchDate[2], 10);
+                        const d = matchDate[3].padStart(2, '0');
+                        monthIndex = m;
+                        fechaFormateada = `${d}/${String(m + 1).padStart(2, '0')}/${y}`;
+                    }
+                } else if (str.includes('/')) {
+                    const parts = str.split('/');
+                    if (parts.length === 3) {
+                        let p1 = parts[0].padStart(2, '0');
+                        let p2 = parts[1].padStart(2, '0');
+                        let p3 = parts[2];
+                        if (p3.length === 2) p3 = '20' + p3;
+                        
+                        let mVal = parseInt(p2, 10);
+                        if (mVal >= 1 && mVal <= 12) {
+                            monthIndex = mVal - 1;
+                            fechaFormateada = `${p1}/${p2}/${p3}`;
+                        } else {
+                            let mValAlt = parseInt(p1, 10);
+                            if (mValAlt >= 1 && mValAlt <= 12) {
+                                monthIndex = mValAlt - 1;
+                                fechaFormateada = `${p2}/${p1}/${p3}`;
+                            }
+                        }
+                    }
+                } else if (str.includes('-')) {
+                    const parts = str.split('-');
+                    if (parts.length === 3) {
+                        let p1 = parts[0];
+                        let p2 = parts[1].padStart(2, '0');
+                        let p3 = parts[2];
+                        if (p1.length === 4) {
+                            let mVal = parseInt(p2, 10);
+                            if (mVal >= 1 && mVal <= 12) {
+                                monthIndex = mVal - 1;
+                                fechaFormateada = `${p3.padStart(2, '0')}/${p2}/${p1}`;
+                            }
+                        } else {
+                            let mVal = parseInt(p2, 10);
+                            if (mVal >= 1 && mVal <= 12) {
+                                monthIndex = mVal - 1;
+                                let yr = p3.length === 2 ? '20' + p3 : p3;
+                                fechaFormateada = `${p1.padStart(2, '0')}/${p2}/${yr}`;
+                            }
+                        }
+                    }
+                }
+
+                return { cui, ut, departamento, estado, fechaTermino: fechaFormateada, monthIndex };
+            }).filter(d => d.cui !== '-' && d.cui !== null && d.cui !== undefined);
+
+            // Cargar selector de departamentos único
+            const departamentosUnicos = [...new Set(rawCulminadosData.map(d => d.departamento))].filter(d => d && d !== '-').sort();
+            const selectDepCulm = document.getElementById('filter-dep-culminacion');
+            if (selectDepCulm) {
+                selectDepCulm.innerHTML = '<option value="">Todos los Departamentos</option>' + departamentosUnicos.map(dep => `<option value="${dep}">${dep}</option>`).join('');
             }
 
-            if (charts.statusPim) charts.statusPim.destroy();
-            const ctxStatusPim = document.getElementById('statusPimChart');
-            if (ctxStatusPim) {
-                charts.statusPim = new Chart(ctxStatusPim.getContext('2d'), {
+            actualizarVistaCulminados();
+        }
+
+        function filterCulminados() {
+            actualizarVistaCulminados();
+        }
+
+        function actualizarVistaCulminados() {
+            const selectedMesVal = document.getElementById('filter-mes-culminacion').value;
+            const selectedDepVal = document.getElementById('filter-dep-culminacion').value.toUpperCase();
+            const monthNames = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+            
+            // Filtrar datos según departamento para recalcular las barras del gráfico mensual de forma dinámica
+            let datosParaGrafico = rawCulminadosData;
+            if (selectedDepVal !== "") {
+                datosParaGrafico = rawCulminadosData.filter(item => item.departamento === selectedDepVal);
+            }
+
+            let monthlyCounts = new Array(12).fill(0);
+            datosParaGrafico.forEach(item => {
+                if (item.monthIndex >= 0 && item.monthIndex < 12) {
+                    monthlyCounts[item.monthIndex]++;
+                }
+            });
+
+            // Filtrar datos para la tabla de proyectos según Mes y Departamento
+            let filtradosParaTabla = rawCulminadosData;
+            if (selectedMesVal !== "") {
+                const mIdx = parseInt(selectedMesVal, 10);
+                filtradosParaTabla = filtradosParaTabla.filter(item => item.monthIndex === mIdx);
+            }
+            if (selectedDepVal !== "") {
+                filtradosParaTabla = filtradosParaTabla.filter(item => item.departamento === selectedDepVal);
+            }
+
+            // Renderizar la tabla de proyectos culminados
+            const tbodyCulm = document.getElementById('tbody-culminados');
+            if (tbodyCulm) {
+                tbodyCulm.innerHTML = '';
+                document.getElementById('culminados-count').innerText = filtradosParaTabla.length;
+
+                if (filtradosParaTabla.length === 0) {
+                    tbodyCulm.innerHTML = `<tr><td colspan="5" class="p-6 text-center text-slate-400 font-medium">No se encontraron proyectos registrados con los filtros seleccionados.</td></tr>`;
+                } else {
+                    filtradosParaTabla.forEach(row => {
+                        tbodyCulm.innerHTML += `
+                            <tr class="hover:bg-slate-50/80 transition">
+                                <td class="p-3.5 pl-5 font-bold text-slate-800">${row.cui}</td>
+                                <td class="p-3.5 font-sans"><span class="bg-sky-50 text-sky-700 border border-sky-100 px-2.5 py-1 rounded-lg font-semibold shadow-sm">${row.ut}</span></td>
+                                <td class="p-3.5 font-sans text-slate-600">${row.departamento}</td>
+                                <td class="p-3.5 font-sans text-emerald-700 font-semibold">${row.estado}</td>
+                                <td class="p-3.5 pr-5 text-right font-sans text-slate-600">${row.fechaTermino}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            // Renderizar Gráfico de barras mensual
+            if (charts.statusMonthlyCulminados) charts.statusMonthlyCulminados.destroy();
+            const ctxMonthlyCulminados = document.getElementById('statusMonthlyCulminadosChart');
+            if (ctxMonthlyCulminados) {
+                const backgroundColors = monthNames.map((_, idx) => (selectedMesVal === "" || parseInt(selectedMesVal, 10) === idx) ? '#10b981' : '#cbd5e1');
+
+                charts.statusMonthlyCulminados = new Chart(ctxMonthlyCulminados.getContext('2d'), {
                     type: 'bar',
                     data: {
-                        labels: labels,
-                        datasets: [
-                            { label: 'PIM 2026 (S/)', data: activeData.map(d => parseNum(d['PIM 2026 (S/)'] || d.PIM)), backgroundColor: '#3b82f6', borderRadius: 6 },
-                            { label: 'Devengado (S/)', data: activeData.map(d => parseNum(d['Devengado (S/)'] || d.Devengado)), backgroundColor: '#10b981', borderRadius: 6 }
-                        ]
+                        labels: monthNames,
+                        datasets: [{
+                            label: 'N° de Proyectos Culminados',
+                            data: monthlyCounts,
+                            backgroundColor: backgroundColors,
+                            borderRadius: 6
+                        }]
                     },
                     options: { 
-                        indexAxis: 'y', 
                         responsive: true, 
                         maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
                         scales: {
-                            x: { ticks: { callback: function(value) { return 'S/ ' + (value / 1000000).toFixed(0) + 'M'; } } }
+                            y: {
+                                beginAtZero: true,
+                                ticks: { precision: 0 }
+                            }
                         }
                     }
                 });
